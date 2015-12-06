@@ -1,8 +1,10 @@
 /*
- * Send and receive RF on 433 MHz using a FS1000A TX/RX receiver module for two arduinos.
+ * Send and receive RF on 433 MHz using a FS1000A TX/RX receiver module for two arduino nanos.
  * The transmitting arduino (IS_TX == true) has a button, the receiving arduino has a led.
  * When you push the transmitting arduinos button it sends a message  and 
  * the receiving arduinos led lights up and the message is sent on the serial line.
+ * 
+ * Note: Cheap arduino nano copy builds as an Arduino Nano!
  */
 
 #include <RH_ASK.h>
