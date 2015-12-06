@@ -4,6 +4,8 @@
  * When you push the transmitting arduinos button it sends a message  and 
  * the receiving arduinos led lights up and the message is sent on the serial line.
  * 
+ * For RF followed tutorial from e.g. http://randomnerdtutorials.com/rf-433mhz-transmitter-receiver-module-with-arduino/
+ * 
  * Note: Cheap arduino nano copy builds as an Arduino Nano!
  */
 
