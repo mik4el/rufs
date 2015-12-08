@@ -74,9 +74,9 @@ void loop() {
       }
       
       // Make and send message
-      messageString = "Id: ";
+      messageString = "I:";
       messageString = messageString + String(messageId, DEC);
-      messageString = messageString + " Temp: ";
+      messageString = messageString + " T:";
       messageString = messageString + String(tempC, 2);
       int str_len = messageString.length()+1;
       char messageStringChar[str_len];
@@ -94,13 +94,13 @@ void loop() {
       digitalWrite(LED_PIN_TX, LOW);
     }
   } else {
-    uint8_t buf[12];
+    uint8_t buf[RH_ASK_MAX_MESSAGE_LEN];
     uint8_t buflen = sizeof(buf);
     if (driver.recv(buf, &buflen)) {
-      int i;
       // Message with a good checksum received, dump it.
-      Serial.print("Message: ");
-      Serial.println((char*)buf);
+      Serial.print("Message: '");
+      Serial.print((char*)buf);
+      Serial.print("'\r\n");
       digitalWrite(LED_PIN_RX, HIGH); 
       delay(1000);
       digitalWrite(LED_PIN_RX, LOW);        
