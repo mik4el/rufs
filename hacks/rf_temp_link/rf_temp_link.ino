@@ -34,6 +34,9 @@ RH_ASK driver;
 OneWire oneWire(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices
 DallasTemperature sensors(&oneWire); // Pass our oneWire reference to Dallas Temperature. 
 DeviceAddress firstThermometer = { 0x28, 0xFF, 0xAD, 0x82, 0x61, 0x15, 0x02, 0xE8 }; // Assign the addresses of your 1-Wire temp sensors.
+String messageString = "";
+int messageId = 0;
+float tempC = -127.00; //-127.00 is the error temp
 
 void setup() {
   // initialize the LED pin as an output:
@@ -65,21 +68,25 @@ void loop() {
       // Get and print temperature
       Serial.println("Getting temperatures...");
       sensors.requestTemperatures();
-      float tempC = sensors.getTempC(firstThermometer);
+      tempC = sensors.getTempC(firstThermometer);
       if (tempC == -127.00) {
-        Serial.print("Error getting temperature");
-      } else {
-        Serial.print("C: ");
-        Serial.print(tempC);
+        Serial.println("Error getting temperature");
       }
-      Serial.print("\n\r");
       
-      // Send temperature message
-      char temperatureMessage[6];
-      dtostrf(tempC, 6, 2, temperatureMessage);
-      driver.send((uint8_t *)temperatureMessage, strlen(temperatureMessage));
+      // Make and send message
+      messageString = "Id: ";
+      messageString = messageString + String(messageId, DEC);
+      messageString = messageString + " Temp: ";
+      messageString = messageString + String(tempC, 2);
+      int str_len = messageString.length()+1;
+      char messageStringChar[str_len];
+      messageString.toCharArray(messageStringChar, str_len);
+      Serial.println(messageStringChar);
+      driver.send((uint8_t *)messageStringChar, strlen(messageStringChar));
       driver.waitPacketSent();
-
+      messageString = ""; 
+      messageId = messageId + 1;
+      
       // Provide feedback that message sent
       Serial.println("Message sent!");
       digitalWrite(LED_PIN_TX, HIGH); 
