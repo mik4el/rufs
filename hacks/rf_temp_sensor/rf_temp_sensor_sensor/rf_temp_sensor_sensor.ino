@@ -51,7 +51,7 @@ void loop() {
   sensors.requestTemperatures();
   tempC = sensors.getTempC(firstThermometer);
   
-  // Make temperature message, e.g. "I:1 T:22.50"
+  // Make temperature message, e.g. "I:1 T:22.50 \n"
   messageString = "I:";
   messageString = messageString + String(messageId, DEC);
   messageString = messageString + " T:";
@@ -61,12 +61,17 @@ void loop() {
   } else {
     messageString = messageString + String(tempC, 2);
   }
-  
+  messageString = messageString + "\n";
+
   // Prepare and send message
   int str_len = messageString.length()+1;
   char messageStringChar[str_len];
   messageString.toCharArray(messageStringChar, str_len);
-  Serial.println(messageStringChar);
+  Serial.print("Message: \"");
+  for(int i = 0; messageStringChar[i] != '\n'; ++i) {
+    Serial.print((char)messageStringChar[i]);
+  }
+  Serial.print("\"\n");
   driver.send((uint8_t *)messageStringChar, strlen(messageStringChar));
   driver.waitPacketSent();
   messageString = ""; 
