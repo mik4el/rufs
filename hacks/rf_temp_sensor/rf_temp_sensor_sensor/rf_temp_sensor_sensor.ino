@@ -17,6 +17,8 @@
 
 #define LED_PIN_TX 13   // the number of the LED pin on the transmitter board
 #define ONE_WIRE_BUS 3 // Data wire is plugged into pin 3 on the Arduino
+#define Z1 600.0
+#define Z2 220.0
 
 RH_ASK driver;
 OneWire oneWire(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices
@@ -50,8 +52,13 @@ void loop() {
   Serial.println("Getting temperatures...");
   sensors.requestTemperatures();
   tempC = sensors.getTempC(firstThermometer);
+
+  // Get and print battery voltage
+  Serial.println("Getting voltage...");
+  // 9v = 3.85, 6v = 2.55, 11.9v = 5.00 => k = 2.35, 
+  float Vin = 2.35 * (analogRead(1) * (5.0/1023.0));
   
-  // Make temperature message, e.g. "I:1 T:22.50 \n"
+  // Make message, e.g. "I:1 T:22.50 \n"
   messageString = "I:";
   messageString = messageString + String(messageId, DEC);
   messageString = messageString + " T:";
@@ -61,6 +68,8 @@ void loop() {
   } else {
     messageString = messageString + String(tempC, 2);
   }
+  messageString = messageString + " V:";
+  messageString = messageString + String(Vin, 2);
   messageString = messageString + "\n";
 
   // Prepare and send message
