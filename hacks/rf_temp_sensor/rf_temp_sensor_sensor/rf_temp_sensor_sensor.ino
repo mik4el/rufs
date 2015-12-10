@@ -25,6 +25,7 @@ DeviceAddress firstThermometer = { 0x28, 0xFF, 0xAD, 0x82, 0x61, 0x15, 0x02, 0xE
 String messageString = "";
 int messageId = 0;
 float tempC = -127.00; //-127.00 is the error temp
+float vIn = 0.00;
 
 void setup() {
   // initialize the LED pin as an output:
@@ -50,8 +51,13 @@ void loop() {
   Serial.println("Getting temperatures...");
   sensors.requestTemperatures();
   tempC = sensors.getTempC(firstThermometer);
+
+  // Get and print battery voltage
+  Serial.println("Getting voltage...");
+  // 9v = 3.85, 6v = 2.55, 11.9v = 5.00 => k = 2.35, 
+  vIn = 2.35 * (analogRead(1) * (5.0/1023.0));
   
-  // Make temperature message, e.g. "I:1 T:22.50 \n"
+  // Make message, e.g. "I:1 T:22.50 \n"
   messageString = "I:";
   messageString = messageString + String(messageId, DEC);
   messageString = messageString + " T:";
@@ -61,6 +67,8 @@ void loop() {
   } else {
     messageString = messageString + String(tempC, 2);
   }
+  messageString = messageString + " V:";
+  messageString = messageString + String(vIn, 2);
   messageString = messageString + "\n";
 
   // Prepare and send message
