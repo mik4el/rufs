@@ -15,6 +15,10 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
+// Sleep mode includes
+#include <avr/sleep.h>
+#include <avr/wdt.h>
+
 #define LED_PIN_TX 13   // the number of the LED pin on the transmitter board
 #define ONE_WIRE_BUS 3 // Data wire is plugged into pin 3 on the Arduino
 
@@ -28,6 +32,21 @@ int messageId = 0;
 float temp1C = -127.00; //-127.00 is the error temp
 float temp2C = -127.00; //-127.00 is the error temp
 float vIn = 0.00;
+
+// watchdog interrupt
+ISR(WDT_vect) {
+  wdt_disable();  // disable watchdog
+}
+
+void myWatchdogEnable(const byte interval) {  
+  MCUSR = 0;                          // reset various flags
+  WDTCSR |= 0b00011000;               // see docs, set WDCE, WDE
+  WDTCSR =  0b01000000 | interval;    // set WDIE, and appropriate delay
+
+  wdt_reset();
+  set_sleep_mode (SLEEP_MODE_PWR_DOWN);  
+  sleep_mode();            // now goes to Sleep and waits for the interrupt
+}
 
 void setup() {
   // initialize the LED pin as an output:
@@ -100,4 +119,16 @@ void loop() {
   digitalWrite(LED_PIN_TX, HIGH); 
   delay(1000);
   digitalWrite(LED_PIN_TX, LOW);
+
+    // sleep for a total of 20 seconds
+  myWatchdogEnable (0b100001);  // 8 seconds
+  myWatchdogEnable (0b100001);  // 8 seconds
+  myWatchdogEnable (0b100000);  // 4 seconds
+
+  // sleep bit patterns:
+  //  1 second:  0b000110
+  //  2 seconds: 0b000111
+  //  4 seconds: 0b100000
+  //  8 seconds: 0b100001
+
 }
