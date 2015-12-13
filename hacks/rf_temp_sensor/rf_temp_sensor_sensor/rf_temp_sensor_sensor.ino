@@ -120,11 +120,12 @@ void loop() {
   delay(1000);
   digitalWrite(LED_PIN_TX, LOW);
 
-    // sleep for a total of 20 seconds
+  // sleep for a total of 20 seconds
+  /*
   myWatchdogEnable (0b100001);  // 8 seconds
   myWatchdogEnable (0b100001);  // 8 seconds
   myWatchdogEnable (0b100000);  // 4 seconds
-
+  */
   // sleep bit patterns:
   //  1 second:  0b000110
   //  2 seconds: 0b000111
