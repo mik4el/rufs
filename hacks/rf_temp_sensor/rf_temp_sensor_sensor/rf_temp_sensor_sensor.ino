@@ -63,6 +63,7 @@ void setup() {
   sensors.begin();
   // set the resolution to 10 bit (good enough?)
   sensors.setResolution(firstThermometer, 10);
+  sensors.setResolution(secondThermometer, 10);
   
   Serial.println("Setup complete!");
 }
@@ -76,8 +77,11 @@ void loop() {
 
   // Get and print battery voltage
   Serial.println("Getting voltage...");
-  // 9v = 3.85, 6v = 2.55, 11.9v = 5.00 => k = 2.35, 
-  vIn = 2.35 * (analogRead(1) * (5.0/1023.0));
+  // 9,41v = 2.52 * k => k = 3.57,
+  float readVIn = analogRead(1) * (5.0/1023.0);
+  vIn = 3.75 * readVIn;
+  Serial.println(readVIn);
+  Serial.println("Getting voltage...");
   
   // Make message, e.g. "I:1 T:22.50 \n"
   messageString = "I:";
@@ -120,16 +124,9 @@ void loop() {
   delay(1000);
   digitalWrite(LED_PIN_TX, LOW);
 
-  // sleep for a total of 20 seconds
-  /*
-  myWatchdogEnable (0b100001);  // 8 seconds
-  myWatchdogEnable (0b100001);  // 8 seconds
-  myWatchdogEnable (0b100000);  // 4 seconds
-  */
-  // sleep bit patterns:
-  //  1 second:  0b000110
-  //  2 seconds: 0b000111
-  //  4 seconds: 0b100000
-  //  8 seconds: 0b100001
-
+  // sleep for a total of 8*8=64 seconds
+  for(int i = 0; i < 8; ++i) {
+    myWatchdogEnable (0b100001);  // 8 seconds
+  }
+  
 }
