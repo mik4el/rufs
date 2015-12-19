@@ -10,7 +10,7 @@ try:
 		if len(line)>0: 
 			now = datetime.now()
 			print("%s %s"%(now.strftime("%Y-%m-%d %H:%M:%S"),line))
-			f=open('temp_sensor_log.txt','a')
+			f=open('temp_sensor_log.log','a')
 			print >> f, ("%s %s"%(now.strftime("%Y-%m-%d %H:%M:%S"),line))
 			f.close()
 except KeyboardInterrupt:
