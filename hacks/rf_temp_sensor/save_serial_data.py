@@ -2,7 +2,8 @@ import serial
 from time import strftime
 from datetime import datetime, time
 
-ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
+#ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)  # linux address
+ser = serial.Serial('/dev/cu.wchusbserialfa140', 9600, timeout=1)  # osx address 
 
 try:
 	while 1:
