@@ -34,3 +34,4 @@
 # Others
 .DS_Store
 *.dat
+*.log
