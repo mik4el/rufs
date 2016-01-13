@@ -3,6 +3,7 @@
 
 #define GREEN_PIN 3
 #define RED_PIN 4
+#define POWER_SWITCH_PIN 0
 #define SECONDS_TO_SLEEP 16 // Multiple of 8
 #define SECONDS_ON 3
 
@@ -39,6 +40,7 @@ void setup()
 {
   pinMode(GREEN_PIN, OUTPUT);
   pinMode(RED_PIN, OUTPUT);
+  pinMode(POWER_SWITCH_PIN, OUTPUT);
   set_sleep_mode(SLEEP_MODE_PWR_DOWN);
 }
 
@@ -46,12 +48,14 @@ void enterSleep(void)
 {
   pinMode(GREEN_PIN, INPUT);  // saves som extra uA
   pinMode(RED_PIN, INPUT); // saves som extra uA
+  pinMode(POWER_SWITCH_PIN, INPUT); // saves som extra uA
   ADCSRA &= ~(1<<ADEN); //Disable ADC, saves ~230uA
   setup_watchdog(8); //Setup watchdog to go off after 8sec
   sleep_mode(); //Go to sleep!
   ADCSRA |= (1<<ADEN); //Enable ADC
   pinMode(GREEN_PIN, OUTPUT);  // saves som extra uA
   pinMode(RED_PIN, OUTPUT); // saves som extra uA
+  pinMode(POWER_SWITCH_PIN, OUTPUT); // saves som extra uA
 }
 
 //This runs each time the watch dog wakes us up from sleep
@@ -65,12 +69,14 @@ void loop()
     vcc = readVcc();
     if (vcc >= 3900) { 
       // Measured at vcc=3.7V, plenty of voltage
+      digitalWrite(POWER_SWITCH_PIN, HIGH);
       digitalWrite(GREEN_PIN, HIGH);
       digitalWrite(RED_PIN, LOW);
       delay(1000); // delay so we are not checking vcc all the time
       digitalWrite(GREEN_PIN, LOW);
     } else if (vcc <= 3400) {
       // Measured at vcc<=3.3V, voltage is gone, flash fast red pin 1s
+      // Don't turn on POWER_SWITCH_PIN, no voltage left
       digitalWrite(GREEN_PIN, LOW);
       for (int i=0; i<5; i++) {
         digitalWrite(RED_PIN, HIGH);
@@ -80,6 +86,7 @@ void loop()
       }
     } else {
       // Not much voltage left, flash green pin 1s.
+      digitalWrite(POWER_SWITCH_PIN, HIGH);
       digitalWrite(RED_PIN, LOW);
       for (int i=0; i<5; i++) {
         digitalWrite(GREEN_PIN, HIGH);
@@ -88,6 +95,7 @@ void loop()
         delay(100);      
       }  
     }
+    
     delay(1000*SECONDS_ON-1000);
     
     for (int i=0; i<5; i++) {
@@ -95,7 +103,9 @@ void loop()
         delay(100);
         digitalWrite(RED_PIN, LOW);
         delay(100);      
-    } 
+    }
+    
+    digitalWrite(POWER_SWITCH_PIN, LOW);
   }
 
   enterSleep();
