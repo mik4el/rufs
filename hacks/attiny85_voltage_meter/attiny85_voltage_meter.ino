@@ -3,8 +3,8 @@
 
 #define GREEN_PIN 3
 #define RED_PIN 4
-#define SECONDS_TO_SLEEP 8 // Multiple of 8
-#define SECONDS_ON 1
+#define SECONDS_TO_SLEEP 16 // Multiple of 8
+#define SECONDS_ON 3
 
 long vcc = 0;
 long watchdog_counter = 0;
@@ -61,13 +61,14 @@ ISR(WDT_vect) {
 
 void loop()
 {
-  if(watchdog_counter*8 > SECONDS_TO_SLEEP) {
+  if(watchdog_counter*8 > SECONDS_TO_SLEEP | watchdog_counter == 0) {
     vcc = readVcc();
     if (vcc >= 3900) { 
       // Measured at vcc=3.7V, plenty of voltage
       digitalWrite(GREEN_PIN, HIGH);
       digitalWrite(RED_PIN, LOW);
       delay(1000); // delay so we are not checking vcc all the time
+      digitalWrite(GREEN_PIN, LOW);
     } else if (vcc <= 3400) {
       // Measured at vcc<=3.3V, voltage is gone, flash fast red pin 1s
       digitalWrite(GREEN_PIN, LOW);
@@ -87,9 +88,16 @@ void loop()
         delay(100);      
       }  
     }
-    delay(1000*SECONDS_ON);
+    delay(1000*SECONDS_ON-1000);
+    
+    for (int i=0; i<5; i++) {
+        digitalWrite(RED_PIN, HIGH);
+        delay(100);
+        digitalWrite(RED_PIN, LOW);
+        delay(100);      
+    } 
   }
-  
+
   enterSleep();
 }
 
