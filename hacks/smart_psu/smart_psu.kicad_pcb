@@ -2,11 +2,11 @@
 
   (general
     (links 53)
-    (no_connects 53)
+    (no_connects 50)
     (area 59.924999 13.924999 81.075001 89.075001)
     (thickness 1.6)
     (drawings 7)
-    (tracks 0)
+    (tracks 9)
     (zones 0)
     (modules 26)
     (nets 22)
@@ -174,7 +174,7 @@
   )
 
   (module Capacitors_SMD:C_0805_HandSoldering (layer F.Cu) (tedit 569F4D8D) (tstamp 569E48DC)
-    (at 76 27)
+    (at 75.744 24.828)
     (descr "Capacitor SMD 0805, hand soldering")
     (tags "capacitor 0805")
     (path /569BA552)
@@ -203,7 +203,7 @@
   )
 
   (module Capacitors_SMD:C_0805_HandSoldering (layer F.Cu) (tedit 569F4DDA) (tstamp 569E48E2)
-    (at 75.998 24.32)
+    (at 75.744 27.368)
     (descr "Capacitor SMD 0805, hand soldering")
     (tags "capacitor 0805")
     (path /569BA551)
@@ -984,5 +984,15 @@
   (gr_line (start 81 89) (end 81 14) (angle 90) (layer Edge.Cuts) (width 0.15))
   (gr_line (start 60 89) (end 81 89) (angle 90) (layer Edge.Cuts) (width 0.15))
   (gr_line (start 60 14) (end 60 89) (angle 90) (layer Edge.Cuts) (width 0.15))
+
+  (segment (start 66.1229 19.78654) (end 66.1229 24.1169) (width 0.25) (layer F.Cu) (net 2))
+  (segment (start 66.1229 24.1169) (end 66.326 24.32) (width 0.25) (layer F.Cu) (net 2) (tstamp 569F568B))
+  (segment (start 66.326 24.32) (end 67.616 24.32) (width 0.25) (layer F.Cu) (net 2))
+  (segment (start 67.616 24.32) (end 68.961 25.665) (width 0.25) (layer F.Cu) (net 2) (tstamp 569F567F))
+  (segment (start 68.961 25.665) (end 69.305952 25.665) (width 0.25) (layer F.Cu) (net 2) (tstamp 569F5681))
+  (segment (start 74.24 24.574) (end 74.494 24.828) (width 0.25) (layer F.Cu) (net 3) (tstamp 569F572A))
+  (segment (start 66.35 27) (end 67.502 27) (width 0.25) (layer F.Cu) (net 15))
+  (segment (start 68.067 27.565) (end 69.305952 27.565) (width 0.25) (layer F.Cu) (net 15) (tstamp 569F567A))
+  (segment (start 67.502 27) (end 68.067 27.565) (width 0.25) (layer F.Cu) (net 15) (tstamp 569F5678))
 
 )
