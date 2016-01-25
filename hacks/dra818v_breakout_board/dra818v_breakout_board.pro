@@ -1,4 +1,4 @@
-update=Måndag 25 Januari 2016 10:20:25
+update=Måndag 25 Januari 2016 14:23:48
 version=1
 last_client=kicad
 [pcbnew]
@@ -27,7 +27,7 @@ NetIExt=net
 version=1
 [eeschema]
 version=1
-LibDir=/Users/mikaelandersson/git/rufs/hacks/dra818v_breakout_board/sma_connectors/library
+LibDir=/Users/mikaelandersson/git/rufs/hacks/dra818v_breakout_board/sma_connectors/library;/Users/mikaelandersson/git/rufs/hacks/dra818v_breakout_board/dra818v_library
 [eeschema/libraries]
 LibName1=power
 LibName2=device
@@ -59,3 +59,4 @@ LibName27=atmel
 LibName28=contrib
 LibName29=valves
 LibName30=sma_connectors/library/sma
+LibName31=dra818v_library/dra818v
