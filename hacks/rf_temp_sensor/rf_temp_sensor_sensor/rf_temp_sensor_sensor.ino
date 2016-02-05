@@ -15,10 +15,6 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-// Sleep mode includes
-#include <avr/sleep.h>
-#include <avr/wdt.h>
-
 #define LED_PIN_TX 13   // the number of the LED pin on the transmitter board
 #define ONE_WIRE_BUS 3 // Data wire is plugged into pin 3 on the Arduino
 
@@ -31,21 +27,32 @@ String messageString = "";
 int messageId = 0;
 float temp1C = -127.00; //-127.00 is the error temp
 float temp2C = -127.00; //-127.00 is the error temp
-float vIn = 0.00;
+long vcc = 0;
 
-// watchdog interrupt
-ISR(WDT_vect) {
-  wdt_disable();  // disable watchdog
-}
+long readVcc() {
+  // Read 1.1V reference against AVcc
+  // set the reference to Vcc and the measurement to the internal 1.1V reference
+  #if defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
+    ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
+  #elif defined (__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
+    ADMUX = _BV(MUX5) | _BV(MUX0);
+  #elif defined (__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__)
+    ADMUX = _BV(MUX3) | _BV(MUX2);
+  #else
+    ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
+  #endif  
 
-void myWatchdogEnable(const byte interval) {  
-  MCUSR = 0;                          // reset various flags
-  WDTCSR |= 0b00011000;               // see docs, set WDCE, WDE
-  WDTCSR =  0b01000000 | interval;    // set WDIE, and appropriate delay
+  delay(2); // Wait for Vref to settle
+  ADCSRA |= _BV(ADSC); // Start conversion
+  while (bit_is_set(ADCSRA,ADSC)); // measuring
 
-  wdt_reset();
-  set_sleep_mode (SLEEP_MODE_PWR_DOWN);  
-  sleep_mode();            // now goes to Sleep and waits for the interrupt
+  uint8_t low  = ADCL; // must read ADCL first - it then locks ADCH  
+  uint8_t high = ADCH; // unlocks both
+
+  long result = (high<<8) | low;
+
+  result = 1125300L / result; // Calculate Vcc (in mV); 1125300 = 1.1*1023*1000
+  return result; // Vcc in millivolts
 }
 
 void setup() {
@@ -74,15 +81,8 @@ void loop() {
   sensors.requestTemperatures();
   temp1C = sensors.getTempC(firstThermometer);
   temp2C = sensors.getTempC(secondThermometer);
+  vcc = readVcc();
 
-  // Get and print battery voltage
-  Serial.println("Getting voltage...");
-  // 9,41v = 2.52 * k => k = 3.57,
-  float readVIn = analogRead(1) * (5.0/1023.0);
-  vIn = 3.75 * readVIn;
-  Serial.println(readVIn);
-  Serial.println("Getting voltage...");
-  
   // Make message, e.g. "I:1 T:22.50 \n"
   messageString = "I:";
   messageString = messageString + String(messageId, DEC);
@@ -101,7 +101,7 @@ void loop() {
     messageString = messageString + String(temp2C, 2);
   }
   messageString = messageString + " V:";
-  messageString = messageString + String(vIn, 2);
+  messageString = messageString + String(vcc, DEC);
   messageString = messageString + "\n";
 
   // Prepare and send message
@@ -123,10 +123,5 @@ void loop() {
   digitalWrite(LED_PIN_TX, HIGH); 
   delay(1000);
   digitalWrite(LED_PIN_TX, LOW);
-
-  // sleep for a total of 8*8=64 seconds
-  for(int i = 0; i < 8; ++i) {
-    myWatchdogEnable (0b100001);  // 8 seconds
-  }
   
 }
