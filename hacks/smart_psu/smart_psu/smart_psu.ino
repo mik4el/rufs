@@ -5,7 +5,7 @@
 #define RED_PIN 4
 #define POWER_SWITCH_PIN 0
 #define MAX1555_CHG_PIN 2
-#define SECONDS_TO_SLEEP 16 // Multiple of 8
+#define SECONDS_TO_SLEEP 400 // Multiple of 8
 #define SECONDS_ON 3
 
 long vcc = 0;
@@ -52,7 +52,7 @@ void enterSleep(void)
   pinMode(RED_PIN, INPUT); // saves som extra uA
   pinMode(POWER_SWITCH_PIN, INPUT); // saves som extra uA
   ADCSRA &= ~(1<<ADEN); //Disable ADC, saves ~230uA
-  setup_watchdog(8); //Setup watchdog to go off after 8sec
+  setup_watchdog(9); //Setup watchdog to go off after 8sec
   sleep_mode(); //Go to sleep!
   ADCSRA |= (1<<ADEN); //Enable ADC
   pinMode(GREEN_PIN, OUTPUT);  // saves som extra uA
@@ -67,7 +67,10 @@ ISR(WDT_vect) {
 
 void loop()
 {
-  if(watchdog_counter*8 > SECONDS_TO_SLEEP | watchdog_counter == 0) {
+  if (watchdog_counter*8 > SECONDS_TO_SLEEP || watchdog_counter == 0) {
+    if (watchdog_counter > 0) {
+      watchdog_counter = 0;
+    }
     vcc = readVcc();
     if (vcc >= 3900) { 
       // Measured at vcc=3.7V, plenty of voltage
