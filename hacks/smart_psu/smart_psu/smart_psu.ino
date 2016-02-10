@@ -8,10 +8,10 @@
 #define SECONDS_TO_SLEEP 400 // Multiple of 8
 #define SECONDS_ON 3
 
-long vcc = 0;
+long internal_v = 0;
 long watchdog_counter = 0;
 
-long readVcc() {
+long read_internal_v() {
   // Read 1.1V reference against AVcc
   // set the reference to Vcc and the measurement to the internal 1.1V reference
   #if defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
@@ -71,15 +71,15 @@ void loop()
     if (watchdog_counter > 0) {
       watchdog_counter = 0;
     }
-    vcc = readVcc();
-    if (vcc >= 3900) { 
+    internal_v = read_internal_v();
+    if (internal_v >= 3900) { 
       // Measured at vcc=3.7V, plenty of voltage
       digitalWrite(POWER_SWITCH_PIN, HIGH);
       digitalWrite(GREEN_PIN, HIGH);
       digitalWrite(RED_PIN, LOW);
       delay(1000); // delay so we are not checking vcc all the time
       digitalWrite(GREEN_PIN, LOW);
-    } else if (vcc <= 3400) {
+    } else if (internal_v <= 3400) {
       // Measured at vcc<=3.3V, voltage is gone, flash fast red pin 1s
       // Don't turn on POWER_SWITCH_PIN, no voltage left
       digitalWrite(GREEN_PIN, LOW);
