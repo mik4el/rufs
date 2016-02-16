@@ -6,7 +6,9 @@
 #define POWER_SWITCH_PIN 0
 #define MAX1555_CHG_PIN 2
 #define SECONDS_TO_SLEEP 400 // Multiple of 8
-#define SECONDS_ON 3
+#define SECONDS_ON 60L // For rf_temp_sensor, seconds on is 3, tracker version, seconds on is 60
+
+//NB: Remember to compile for 1 mhz internal clock.
 
 long internal_v = 0;
 long watchdog_counter = 0;
@@ -118,7 +120,7 @@ void loop()
     digitalWrite(GREEN_PIN, LOW);
     digitalWrite(RED_PIN, LOW);
 
-    delay(1000*SECONDS_ON-1000);
+    delay(1000L*SECONDS_ON-1000L); // Use long numbers to handle long seconds on periods 
     
     for (int i=0; i<5; i++) {
         digitalWrite(RED_PIN, HIGH);
