@@ -1,126 +1,115 @@
-// Include LibAPRS
+// Includes
 #include <LibAPRS.h>
-#include <SoftwareSerial.h>
+#include "TinyGPS++.h"
+#include "String.h"
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <EEPROM.h>
 
-// You must define what reference voltage the ADC
-// of your device is running at. If you bought a
-// MicroModem from unsigned.io, it will be running
-// at 3.3v if the "hw rev" is greater than 2.0.
-// This is the most common. If you build your own
-// modem, you should know this value yourself :)
-//#define ADC_REFERENCE REF_3V3
-// OR
+//LibAPRS
 #define ADC_REFERENCE REF_5V
+#define OPEN_SQUELCH true
 
-// You can also define whether your modem will be
-// running with an open squelch radio:
-#define OPEN_SQUELCH false
+//Other
+#define ONE_WIRE_BUS 13 // Data wire is plugged into pin d8 on the Arduino
+#define BATT_V_PIN 2 // Batt pin wire is plugged into a2 on the Arduino
 
-// You always need to include this function. It will
-// get called by the library every time a packet is
-// received, so you can process incoming packets.
-//
-// If you are only interested in receiving, you should
-// just leave this function empty.
-// 
-// IMPORTANT! This function is called from within an
-// interrupt. That means that you should only do things
-// here that are FAST. Don't print out info directly
-// from this function, instead set a flag and print it
-// from your main loop, like this:
+TinyGPSPlus gps;
+OneWire oneWire(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices
+DallasTemperature sensors(&oneWire); // Pass our oneWire reference to Dallas Temperature. 
+DeviceAddress firstThermometer = { 0x28, 0xFF, 0xD5, 0xC1, 0x64, 0x15, 0x02, 0xE6 }; // Assign the addresses of your 1-Wire temp sensors.
+String commentString = "";
+float temp1C = -127.00; //-127.00 is the error temp
+long internalV = 0;
+float battV = 0;
+long messageId = 0;
 
-SoftwareSerial gpsSerial(12, 11); // RX, TX
-
-boolean gotPacket = false;
-AX25Msg incomingPacket;
-uint8_t *packetData;
 void aprs_msg_callback(struct AX25Msg *msg) {
-  // If we already have a packet waiting to be
-  // processed, we must drop the new one.
-  if (!gotPacket) {
-    // Set flag to indicate we got a packet
-    gotPacket = true;
+}
 
-    // The memory referenced as *msg is volatile
-    // and we need to copy all the data to a
-    // local variable for later processing.
-    memcpy(&incomingPacket, msg, sizeof(AX25Msg));
+long read_internal_v() {
+  // Read 1.1V reference against AVcc
+  // set the reference to Vcc and the measurement to the internal 1.1V reference
+  #if defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
+    ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
+  #elif defined (__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
+    ADMUX = _BV(MUX5) | _BV(MUX0);
+  #elif defined (__AVR_ATtiny25__) || defined(__AVR_ATtiny45__) || defined(__AVR_ATtiny85__)
+    ADMUX = _BV(MUX3) | _BV(MUX2);
+  #else
+    ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
+  #endif  
 
-    // We need to allocate a new buffer for the
-    // data payload of the packet. First we check
-    // if there is enough free RAM.
-    if (freeMemory() > msg->len) {
-      packetData = (uint8_t*)malloc(msg->len);
-      memcpy(packetData, msg->info, msg->len);
-      incomingPacket.info = packetData;
-    } else {
-      // We did not have enough free RAM to receive
-      // this packet, so we drop it.
-      gotPacket = false;
-    }
-  }
+  delay(2); // Wait for Vref to settle
+  ADCSRA |= _BV(ADSC); // Start conversion
+  while (bit_is_set(ADCSRA,ADSC)); // measuring
+
+  uint8_t low  = ADCL; // must read ADCL first - it then locks ADCH  
+  uint8_t high = ADCH; // unlocks both
+
+  long result = (high<<8) | low;
+
+  result = 1125300L / result; // Calculate Vcc (in mV); 1125300 = 1.1*1023*1000
+  return result; // Vcc in millivolts
+}
+
+float read_batt_v(void) {
+  return analogRead(BATT_V_PIN) * (5.0/1023.0);  
+}
+
+//This function will write a 4 byte (32bit) long to the eeprom at
+//the specified address to address + 3.
+void EEPROMWritelong(int address, long value) {
+  //Decomposition from a long to 4 bytes by using bitshift.
+  //One = Most significant -> Four = Least significant byte
+  byte four = (value & 0xFF);
+  byte three = ((value >> 8) & 0xFF);
+  byte two = ((value >> 16) & 0xFF);
+  byte one = ((value >> 24) & 0xFF);
+  
+  //Write the 4 bytes into the eeprom memory.
+  EEPROM.write(address, four);
+  EEPROM.write(address + 1, three);
+  EEPROM.write(address + 2, two);
+  EEPROM.write(address + 3, one);
+}
+
+//This function will return a 4 byte (32bit) long from the eeprom
+//at the specified address to address + 3.
+long EEPROMReadlong(long address) {
+  //Read the 4 bytes from the eeprom memory.
+  long four = EEPROM.read(address);
+  long three = EEPROM.read(address + 1);
+  long two = EEPROM.read(address + 2);
+  long one = EEPROM.read(address + 3);
+  
+  //Return the recomposed long by using bitshift.
+  return ((four << 0) & 0xFF) + ((three << 8) & 0xFFFF) + ((two << 16) & 0xFFFFFF) +((one << 24) & 0xFFFFFFFF);
 }
 
 void setup() {
+  delay(200);
   // Set up serial port
   Serial.begin(9600);
   
-  // Initialise APRS library - This starts the modem
+  // Initialise LibAPRS
   APRS_init(ADC_REFERENCE, OPEN_SQUELCH);
-  
-  // You must at a minimum configure your callsign and SSID
   APRS_setCallsign("SA0MIK", 5);
-  
-  // You don't need to set the destination identifier, but
-  // if you want to, this is how you do it:
-  APRS_setDestination("APZMIK", 0);
-  
-  // Path parameters are set to sensible values by
-  // default, but this is how you can configure them:
   APRS_setPath1("WIDE1", 1);
   APRS_setPath2("WIDE2", 2);
-  
-  // You can define preamble and tail like this:
-  APRS_setPreamble(500);
+  APRS_setPreamble(350);
   APRS_setTail(50);
-  
-  // You can use the normal or alternate symbol table:
-  // APRS_useAlternateSymbolTable(false);
-  
-  // And set what symbol you want to use:
-  // APRS_setSymbol('n');
-  
-  // We can print out all the settings
   APRS_printSettings();
   Serial.print(F("Free RAM:     ")); Serial.println(freeMemory());
 
-  gpsSerial.begin(9600);
-
-}
-
-void locationUpdateExample() {
-  // Let's first set our latitude and longtitude.
-  // These should be in NMEA format!
-  APRS_setLat("5530.80N");
-  APRS_setLon("01143.89E");
+  // Initialise sensors
+  pinMode(BATT_V_PIN, INPUT);
+  // initialize temp probe
+  sensors.begin();
+  // set the resolution to 10 bit (good enough?)
+  sensors.setResolution(firstThermometer, 10);
   
-  // We can optionally set power/height/gain/directivity
-  // information. These functions accept ranges
-  // from 0 to 10, directivity 0 to 9.
-  // See this site for a calculator:
-  // http://www.aprsfl.net/phgr.php
-  // LibAPRS will only add PHG info if all four variables
-  // are defined!
-  APRS_setPower(2);
-  APRS_setHeight(4);
-  APRS_setGain(7);
-  APRS_setDirectivity(0);
-  
-  // We'll define a comment string
-  char *comment = " Mikael testing";
-    
-  // And send the update
-  APRS_sendLoc(comment, strlen(comment));
+  Serial.println(F("Setup complete!"));
   
 }
 
@@ -139,53 +128,139 @@ void messageExample() {
 // won't miss any packets due to one already
 // waiting to be processed
 void processPacket() {
-  if (gotPacket) {
-    gotPacket = false;
-    
-    Serial.print(F("Received APRS packet. SRC: "));
-    Serial.print(incomingPacket.src.call);
-    Serial.print(F("-"));
-    Serial.print(incomingPacket.src.ssid);
-    Serial.print(F(". DST: "));
-    Serial.print(incomingPacket.dst.call);
-    Serial.print(F("-"));
-    Serial.print(incomingPacket.dst.ssid);
-    Serial.print(F(". Data: "));
-
-    for (int i = 0; i < incomingPacket.len; i++) {
-      Serial.write(incomingPacket.info[i]);
-    }
-    Serial.println("");
-
-    // Remeber to free memory for our buffer!
-    free(packetData);
-
-    // You can print out the amount of free
-    // RAM to check you don't have any memory
-    // leaks
-    // Serial.print(F("Free RAM: ")); Serial.println(freeMemory());
-  }
 }
 
-boolean whichExample = true;
+void updatePosition() {
+    // Make and set NMEA style latitude string
+    String latStr = "";
+    if (gps.location.rawLat().deg<10) {
+      latStr += "0";
+    }
+    latStr += String(gps.location.rawLat().deg, DEC);
+    if (gps.location.rawLat().billionths/10000000.0<10.0) {
+      latStr += "0";  
+    }
+    latStr += String(gps.location.rawLat().billionths/10000000.0,2);
+    latStr += gps.location.rawLat().negative ? "S" : "N";
+    
+    int latStr_len = latStr.length()+1;
+    char latChar[latStr_len];
+    latStr.toCharArray(latChar, latStr_len);
+    APRS_setLat(latChar);
+//    //Debug
+//    Serial.print("'");
+//    Serial.print(latChar);
+//    Serial.print("'");
+//    Serial.println();
+    
+    // Make and set NMEA style longitude string
+    String longStr = "";
+    if (gps.location.rawLng().deg<100) {
+      longStr += "0";
+    }
+    if (gps.location.rawLng().deg<10) {
+      longStr += "0";
+    }
+    longStr += String(gps.location.rawLng().deg, DEC);
+    if (gps.location.rawLng().billionths/10000000.0<10.0) {
+      longStr += "0";  
+    }
+    longStr += String(gps.location.rawLng().billionths/10000000.0,2);
+    longStr += gps.location.rawLng().negative ? "W" : "E";
+    
+    int longStr_len = longStr.length()+1;
+    char longChar[longStr_len];
+    longStr.toCharArray(longChar, longStr_len);
+    APRS_setLon(longChar);
+//      //Debug
+//      Serial.print("'");
+//      Serial.print(longChar);
+//      Serial.print("'");
+//      Serial.println();
+}
 
+void updateComment() {
+  sensors.requestTemperatures();
+  temp1C = sensors.getTempC(firstThermometer);
+  internalV = read_internal_v();
+  battV = read_batt_v();
+  long messageIdAddress=0;
+  messageId = EEPROMReadlong(messageIdAddress) + 1;
+  // Make message, e.g. "I:1 T:22.50 \n"
+  commentString = F("I:");
+  commentString += String(messageId, DEC);
+  commentString += F(" T1:");
+  if (temp1C == -127.00) {
+    Serial.println(F("Error getting temperature"));
+    commentString += "E";
+  } else {
+    commentString += String(temp1C, 2);
+  }
+  commentString += F(" Vi:");
+  commentString += String(internalV/1000.0, 2);
+  commentString += F(" Vb:");
+  commentString += String(battV, 2);
+  EEPROMWritelong(messageIdAddress, messageId);
+}
+
+void sendLocationUpdate() {
+    int str_len = commentString.length()+1;
+    char commentStringChar[str_len];
+    commentString.toCharArray(commentStringChar, str_len);
+    APRS_sendLoc(commentStringChar, strlen(commentStringChar));
+    Serial.println();
+    Serial.print(F("Location update sent with comment '"));
+    Serial.print(commentStringChar);
+    Serial.print(F("'"));
+    Serial.println();
+    //print_status();
+}
+
+void print_status() {
+    APRS_printSettings();
+    Serial.print(F("Free RAM:     ")); Serial.println(freeMemory());
+}
+
+// This custom version of delay() ensures that the gps object
+// is being "fed".
+static void smartDelay(unsigned long ms)
+{
+  unsigned long start = millis();
+  do 
+  {
+    while (Serial.available())
+      gps.encode(Serial.read());
+  } while (millis() - start < ms);
+}
+
+int counter = 0;
 void loop() {
- 
-  if (whichExample) {
-    delay(2000);
-    Serial.println("Location update");
-    locationUpdateExample();
-    delay(5000);
-    Serial.println("Sending message");
-    messageExample();
+  
+  while (Serial.available())
+      gps.encode(Serial.read());
+  
+  if (millis() > 5000 && gps.charsProcessed() < 10) {
+    Serial.println(F("No GPS detected: check wiring."));
+    while(true);
   }
-  whichExample = false;
-
-  delay(500);
-  processPacket();
-
-  while (gpsSerial.available()) {
-    Serial.write(gpsSerial.read());
+  
+  if (gps.location.isValid()) {
+    Serial.print(gps.location.lat(), 2);
+    Serial.print(F(","));
+    Serial.print(gps.location.lng(), 2);
+    Serial.println();
+    if (counter==55 || counter==0) {
+      updatePosition();
+      updateComment();
+      sendLocationUpdate();    
+      counter = 0;
+      smartDelay(5000);
+    }
+    counter += 1;
+  } else {
+    Serial.println(F("."));
   }
+  
+  smartDelay(1000);
   
 }
