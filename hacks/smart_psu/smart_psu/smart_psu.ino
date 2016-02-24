@@ -6,7 +6,7 @@
 #define POWER_SWITCH_PIN 0
 #define MAX1555_CHG_PIN 2
 #define SECONDS_TO_SLEEP 400 // Multiple of 8
-#define SECONDS_ON 60L // For rf_temp_sensor, seconds on is 3, tracker version, seconds on is 60
+#define SECONDS_ON 5L*60L // For rf_temp_sensor, seconds on is 3, tracker version, seconds on is 5*60 to make sure GPS lock happens
 
 //NB: Remember to compile for 1 mhz internal clock.
 

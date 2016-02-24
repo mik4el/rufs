@@ -394,8 +394,6 @@ $EndComp
 Text Label 3650 1650 0    60   ~ 0
 LINE_LEVEL_IN
 NoConn ~ 6900 3050
-NoConn ~ 6900 3150
-NoConn ~ 6900 3250
 NoConn ~ 5500 3750
 NoConn ~ 5500 2050
 NoConn ~ 6050 1300
@@ -578,9 +576,7 @@ F 3 "" H 6200 2450 60  0000 C CNN
 	1    6200 2450
 	1    0    0    -1  
 $EndComp
-Text Label 7200 1900 0    60   ~ 0
-GPS_TX
-Text Label 7200 2000 0    60   ~ 0
+Text Label 7200 3150 0    60   ~ 0
 GPS_RX
 Text Label 7200 2300 0    60   ~ 0
 TEMP_DATA
@@ -597,8 +593,6 @@ F 3 "" H 10300 3700 50  0000 C CNN
 $EndComp
 Text Label 8700 3600 0    60   ~ 0
 RADIO_TX
-Text Label 8700 3700 0    60   ~ 0
-RADIO_RX
 $Comp
 L GND #PWR019
 U 1 1 56CA6279
@@ -610,10 +604,8 @@ F 3 "" H 8700 3800 50  0000 C CNN
 	1    8700 3800
 	1    0    0    -1  
 $EndComp
-Text Label 4700 2350 0    60   ~ 0
+Text Label 7200 3250 0    60   ~ 0
 RADIO_TX
-Text Label 4700 2450 0    60   ~ 0
-RADIO_RX
 $Comp
 L R R13
 U 1 1 56CA6C17
@@ -835,21 +827,13 @@ Wire Wire Line
 Wire Wire Line
 	8700 2700 9500 2700
 Wire Wire Line
-	7200 1900 6900 1900
-Wire Wire Line
-	6900 2000 7200 2000
+	6900 3150 7200 3150
 Wire Wire Line
 	7200 2300 6900 2300
 Wire Wire Line
 	8700 3800 10100 3800
 Wire Wire Line
-	8700 3700 10100 3700
-Wire Wire Line
 	8700 3600 9600 3600
-Wire Wire Line
-	4700 2350 5500 2350
-Wire Wire Line
-	5500 2450 4700 2450
 Wire Wire Line
 	9900 3600 10100 3600
 Wire Wire Line
@@ -889,10 +873,10 @@ Wire Wire Line
 	6200 5600 6200 5300
 Wire Wire Line
 	6200 5300 6100 5300
-Text Label 4700 2550 0    60   ~ 0
+Text Label 4700 2450 0    60   ~ 0
 V_BATT
 Wire Wire Line
-	4700 2550 5500 2550
+	4700 2450 5500 2450
 $Comp
 L R R17
 U 1 1 56CC3579
@@ -914,4 +898,16 @@ Wire Wire Line
 Wire Wire Line
 	8700 2300 9500 2300
 Connection ~ 9300 2300
+NoConn ~ 5500 2350
+NoConn ~ 5500 2550
+NoConn ~ 6900 1900
+Wire Wire Line
+	7200 3250 6900 3250
+NoConn ~ 6900 2000
+Text Label 8700 3700 0    60   ~ 0
+RADIO_RX
+Wire Wire Line
+	8700 3700 10100 3700
+NoConn ~ 8700 1500
+NoConn ~ 8700 3700
 $EndSCHEMATC
