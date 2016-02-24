@@ -11,7 +11,7 @@
 #define OPEN_SQUELCH true
 
 //Other
-#define ONE_WIRE_BUS 13 // Data wire is plugged into pin d8 on the Arduino
+#define ONE_WIRE_BUS 8 // Data wire is plugged into pin d8 on the Arduino
 #define BATT_V_PIN 2 // Batt pin wire is plugged into a2 on the Arduino
 
 TinyGPSPlus gps;
@@ -213,7 +213,7 @@ void sendLocationUpdate() {
     Serial.print(commentStringChar);
     Serial.print(F("'"));
     Serial.println();
-    //print_status();
+    print_status();
 }
 
 void print_status() {
@@ -242,6 +242,8 @@ void loop() {
   if (millis() > 5000 && gps.charsProcessed() < 10) {
     Serial.println(F("No GPS detected: check wiring."));
     while(true);
+  } else {
+    Serial.println(gps.passedChecksum());
   }
   
   if (gps.location.isValid()) {
