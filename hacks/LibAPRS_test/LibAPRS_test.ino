@@ -100,7 +100,7 @@ void setup() {
   APRS_setPreamble(350);
   APRS_setTail(100);
   APRS_useAlternateSymbolTable(false);
-  APRS_setSymbol('V');
+  APRS_setSymbol('n');
   APRS_printSettings();
   Serial.print(F("Free RAM:     ")); Serial.println(freeMemory());
 
@@ -133,52 +133,74 @@ void processPacket() {
 }
 
 void updatePosition() {
-    // Make and set NMEA style latitude string
-    String latStr = "";
-    if (gps.location.rawLat().deg<10) {
-      latStr += "0";
-    }
-    latStr += String(gps.location.rawLat().deg, DEC);
-    if (gps.location.rawLat().billionths/10000000.0<10.0) {
-      latStr += "0";  
-    }
-    latStr += String(gps.location.rawLat().billionths/10000000.0,2);
-    latStr += gps.location.rawLat().negative ? "S" : "N";
+  // Convert and set latitude NMEA string Degree Minute Hundreths of minutes ddmm.hh[S,N].  
+  String latStr = "";
+  int temp = 0;
+  double d_lat = gps.location.lat();
+  double dm_lat = 0.0;
+  
+  if (d_lat < 0.0){
+    temp=-(int)d_lat;
+    dm_lat=temp*100.0 - (d_lat+temp)*60.0;
+  } else {
+    temp=(int)d_lat;
+    dm_lat=temp*100 + (d_lat-temp)*60.0;
+  }
+  if (dm_lat < 1000) {
+    latStr += "0";   
+  }
+  latStr += String(dm_lat,2);   
+  if (d_lat >= 0.0) {
+    latStr +="N";
+  } else {
+    latStr +="S";     
+  }
     
-    int latStr_len = latStr.length()+1;
-    char latChar[latStr_len];
-    latStr.toCharArray(latChar, latStr_len);
-    APRS_setLat(latChar);
-//    //Debug
-//    Serial.print("'");
-//    Serial.print(latChar);
-//    Serial.print("'");
-//    Serial.println();
-    
-    // Make and set NMEA style longitude string
-    String longStr = "";
-    if (gps.location.rawLng().deg<100) {
-      longStr += "0";
-    }
-    if (gps.location.rawLng().deg<10) {
-      longStr += "0";
-    }
-    longStr += String(gps.location.rawLng().deg, DEC);
-    if (gps.location.rawLng().billionths/10000000.0<10.0) {
-      longStr += "0";  
-    }
-    longStr += String(gps.location.rawLng().billionths/10000000.0,2);
-    longStr += gps.location.rawLng().negative ? "W" : "E";
-    
-    int longStr_len = longStr.length()+1;
-    char longChar[longStr_len];
-    longStr.toCharArray(longChar, longStr_len);
-    APRS_setLon(longChar);
-//      //Debug
-//      Serial.print("'");
-//      Serial.print(longChar);
-//      Serial.print("'");
-//      Serial.println();
+  int latStr_len = latStr.length()+1;
+  char latChar[latStr_len];
+  latStr.toCharArray(latChar, latStr_len);
+  APRS_setLat(latChar);
+  
+  //Debug
+  Serial.print("'");
+  Serial.print(latChar);
+  Serial.print("'");
+  Serial.println();
+
+  // Convert and set longitude NMEA string Degree Minute Hundreths of minutes ddmm.hh[E,W].  
+  String lonStr = "";
+  double d_lon = gps.location.lng();
+  double dm_lon = 0.0;
+  
+  if (d_lon < 0.0){
+    temp=-(int)d_lon;
+    dm_lon=temp*100.0 - (d_lon+temp)*60.0;
+  } else {
+    temp=(int)d_lon;
+    dm_lon=temp*100 + (d_lon-temp)*60.0;
+  }
+  if (dm_lon < 10000) {
+    lonStr += "0";   
+  }
+  if (dm_lon < 1000) {
+    lonStr += "0";   
+  }
+  lonStr += String(dm_lon,2);   
+  if (d_lon >= 0.0) {
+    lonStr +="E";
+  } else {
+    lonStr +="W";     
+  }
+  int lonStr_len = lonStr.length()+1;
+  char lonChar[lonStr_len];
+  lonStr.toCharArray(lonChar, lonStr_len);
+  APRS_setLon(lonChar);
+  
+  //Debug
+  Serial.print("'");
+  Serial.print(lonChar);
+  Serial.print("'");
+  Serial.println();
 }
 
 void updateComment() {
@@ -203,26 +225,25 @@ void updateComment() {
   commentString += F(" Vb:");
   commentString += String(battV, 2);
   EEPROMWritelong(messageIdAddress, messageId);
-  // reset eeprom
-  EEPROMWritelong(messageIdAddress, 0); //uncomment
+//  EEPROMWritelong(messageIdAddress, 0); //uncomment to reset eeprom
 }
 
 void sendLocationUpdate() {
-    int str_len = commentString.length()+1;
-    char commentStringChar[str_len];
-    commentString.toCharArray(commentStringChar, str_len);
-    APRS_sendLoc(commentStringChar, strlen(commentStringChar));
-    Serial.println();
-    Serial.print(F("Location update sent with comment '"));
-    Serial.print(commentStringChar);
-    Serial.print(F("'"));
-    Serial.println();
-    print_status();
+  int str_len = commentString.length()+1;
+  char commentStringChar[str_len];
+  commentString.toCharArray(commentStringChar, str_len);
+  APRS_sendLoc(commentStringChar, strlen(commentStringChar));
+  Serial.println();
+  Serial.print(F("Location update sent with comment '"));
+  Serial.print(commentStringChar);
+  Serial.print(F("'"));
+  Serial.println();
+  print_status();
 }
 
 void print_status() {
-    APRS_printSettings();
-    Serial.print(F("Free RAM:     ")); Serial.println(freeMemory());
+  APRS_printSettings();
+  Serial.print(F("Free RAM:     ")); Serial.println(freeMemory());
 }
 
 // This custom version of delay() ensures that the gps object
