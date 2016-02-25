@@ -14,6 +14,9 @@
 #define ONE_WIRE_BUS 8 // Data wire is plugged into pin d8 on the Arduino
 #define BATT_V_PIN 2 // Batt pin wire is plugged into a2 on the Arduino
 
+//Debug mode
+#define DEBUG false
+
 TinyGPSPlus gps;
 OneWire oneWire(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices
 DallasTemperature sensors(&oneWire); // Pass our oneWire reference to Dallas Temperature. 
@@ -161,11 +164,12 @@ void updatePosition() {
   latStr.toCharArray(latChar, latStr_len);
   APRS_setLat(latChar);
   
-  //Debug
+#if DEBUG
   Serial.print("'");
   Serial.print(latChar);
   Serial.print("'");
   Serial.println();
+#endif
 
   // Convert and set longitude NMEA string Degree Minute Hundreths of minutes ddmm.hh[E,W].  
   String lonStr = "";
@@ -196,11 +200,12 @@ void updatePosition() {
   lonStr.toCharArray(lonChar, lonStr_len);
   APRS_setLon(lonChar);
   
-  //Debug
+#if DEBUG
   Serial.print("'");
   Serial.print(lonChar);
   Serial.print("'");
   Serial.println();
+#endif
 }
 
 void updateComment() {
@@ -210,7 +215,7 @@ void updateComment() {
   battV = read_batt_v();
   long messageIdAddress=0;
   messageId = EEPROMReadlong(messageIdAddress) + 1;
-  // Make message, e.g. "I:1 T:22.50 \n"
+  // Make message, e.g. "I:1 T:22.50 Vi:4.3 Vb:4.2"
   commentString = F("I:");
   commentString += String(messageId, DEC);
   commentString += F(" T1:");
@@ -238,7 +243,9 @@ void sendLocationUpdate() {
   Serial.print(commentStringChar);
   Serial.print(F("'"));
   Serial.println();
+#if DEBUG
   print_status();
+#endif
 }
 
 void print_status() {
@@ -277,6 +284,9 @@ void loop() {
     Serial.print(gps.location.lng(), 2);
     Serial.println();
     if (counter==55 || counter==0) {
+      if (counter==0) {
+        smartDelay(500); //make sure that an update not happens to fast after startup after observed bug 
+      }
       updatePosition();
       updateComment();
       sendLocationUpdate();    
