@@ -98,7 +98,9 @@ void setup() {
   APRS_setPath1("WIDE1", 1);
   APRS_setPath2("WIDE2", 2);
   APRS_setPreamble(350);
-  APRS_setTail(50);
+  APRS_setTail(100);
+  APRS_useAlternateSymbolTable(false);
+  APRS_setSymbol('V');
   APRS_printSettings();
   Serial.print(F("Free RAM:     ")); Serial.println(freeMemory());
 
@@ -201,6 +203,8 @@ void updateComment() {
   commentString += F(" Vb:");
   commentString += String(battV, 2);
   EEPROMWritelong(messageIdAddress, messageId);
+  // reset eeprom
+  EEPROMWritelong(messageIdAddress, 0); //uncomment
 }
 
 void sendLocationUpdate() {
