@@ -17,7 +17,7 @@
 #define BEACON_REPEATS 5
 
 //Debug mode
-#define DEBUG false
+#define DEBUG true
 
 TinyGPSPlus gps;
 OneWire oneWire(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices
@@ -104,7 +104,7 @@ void setup() {
   APRS_setCallsign("SA0MIK", 5);
   APRS_setPath1("WIDE1", 1);
   APRS_setPath2("WIDE2", 2);
-  APRS_setPreamble(350);
+  APRS_setPreamble(1000); //empiric, slow ptt on and mic on dra818?
   APRS_setTail(100);
   APRS_useAlternateSymbolTable(false);
   APRS_setSymbol('n');
@@ -129,6 +129,32 @@ void messageExample() {
   // And define a string to send
   char *message = "Hi Mikael!";
   APRS_sendMsg(message, strlen(message));
+  
+}
+
+void locationUpdateExample() {
+  // Let's first set our latitude and longtitude.
+  // These should be in NMEA format!
+  APRS_setLat("5530.80N");
+  APRS_setLon("01143.89E");
+  
+  // We can optionally set power/height/gain/directivity
+  // information. These functions accept ranges
+  // from 0 to 10, directivity 0 to 9.
+  // See this site for a calculator:
+  // http://www.aprsfl.net/phgr.php
+  // LibAPRS will only add PHG info if all four variables
+  // are defined!
+  APRS_setPower(2);
+  APRS_setHeight(4);
+  APRS_setGain(7);
+  APRS_setDirectivity(0);
+  
+  // We'll define a comment string
+  char *comment = "LibAPRS location update";
+    
+  // And send the update
+  APRS_sendLoc(comment, strlen(comment));
   
 }
 
@@ -166,15 +192,7 @@ void updatePosition() {
   int latStr_len = latStr.length()+1;
   char latChar[latStr_len];
   latStr.toCharArray(latChar, latStr_len);
-  APRS_setLat(latChar);
   
-#if DEBUG
-  Serial.print("'");
-  Serial.print(latChar);
-  Serial.print("'");
-  Serial.println();
-#endif
-
   // Convert and set longitude NMEA string Degree Minute Hundreths of minutes ddmm.hh[E,W].  
   String lonStr = "";
   double d_lon = gps.location.lng();
@@ -202,17 +220,28 @@ void updatePosition() {
   int lonStr_len = lonStr.length()+1;
   char lonChar[lonStr_len];
   lonStr.toCharArray(lonChar, lonStr_len);
-  APRS_setLon(lonChar);
   
 #if DEBUG
+  Serial.print("'");
+  Serial.print(latChar);
+  Serial.print("'");
+  Serial.println();
   Serial.print("'");
   Serial.print(lonChar);
   Serial.print("'");
   Serial.println();
+  APRS_setLat("5530.80N");
+  APRS_setLon("01143.89E");
+#else
+  APRS_setLat(latChar);       
+  APRS_setLon(lonChar);
 #endif
 }
 
 void updateComment() {
+#if DEBUG
+  commentString = "I:1 T:22.50 Vi:4.3 Vb:4.2";
+#else
   sensors.requestTemperatures();
   temp1C = sensors.getTempC(firstThermometer);
   internalV = read_internal_v();
@@ -235,6 +264,7 @@ void updateComment() {
   commentString += String(battV, 2);
   EEPROMWritelong(messageIdAddress, messageId);
 //  EEPROMWritelong(messageIdAddress, 0); //uncomment to reset eeprom
+#endif
 }
 
 void sendLocationUpdate() {
@@ -273,14 +303,16 @@ void loop() {
   
   while (Serial.available())
       gps.encode(Serial.read());
-  
+
+#if !DEBUG
   if (millis() > 5000 && gps.charsProcessed() < 10) {
     Serial.println(F("No GPS detected: check wiring."));
     while(true);
   } else {
     Serial.println(gps.passedChecksum());
   }
-  
+#endif
+
   if (gps.location.isValid()) {
     Serial.print(gps.location.lat(), 2);
     Serial.print(F(","));
@@ -314,5 +346,12 @@ void loop() {
   
   seconds_since_beacon += 1;
   smartDelay(1000);
+
+#if DEBUG
+  updatePosition();
+  updateComment();
+  sendLocationUpdate();    
+  delay(5000);          
+#endif
   
 }

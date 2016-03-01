@@ -22,7 +22,7 @@ void setup() {
   // check that radio works
   radioSerial.print("AT+DMOCONNECT\r\n");
   delay(1000);
-  radioSerial.print("AT+DMOSETGROUP=0,145.6000,145.6000,0000,8,0000\r\n");
+  radioSerial.print("AT+DMOSETGROUP=0,144.8000,144.8000,0000,8,0000\r\n");
   
   Serial.println("Setup complete");
 
