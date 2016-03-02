@@ -11,13 +11,15 @@
 #define OPEN_SQUELCH false
 
 //Other
-#define ONE_WIRE_BUS 8 // Data wire is plugged into pin d8 on the Arduino
-#define BATT_V_PIN 2 // Batt pin wire is plugged into a2 on the Arduino
+#define ONE_WIRE_BUS 8 // Temperature data wire is plugged into pin D8
+#define BATT_V_PIN 2 // Batt pin wire is plugged into A2
+#define RADIO_ON_PIN A1 // Radio on pin is plugged into A1
 #define BEACON_PERIOD_SECONDS 60
 #define BEACON_REPEATS 5
 
 //Debug mode
 #define DEBUG true
+#define SHOULD_PROGRAM_RADIO false
 
 TinyGPSPlus gps;
 OneWire oneWire(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices
@@ -30,6 +32,45 @@ float battV = 0;
 long messageId = 0;
 int seconds_since_beacon = 0;
 int beacons_sent = 0;
+
+void setup() {
+  delay(200);
+  // Set up serial port
+  Serial.begin(9600);
+  
+  // Initialise LibAPRS
+  APRS_init(ADC_REFERENCE, OPEN_SQUELCH);
+  APRS_setCallsign("SA0MIK", 5);
+  APRS_setPath1("WIDE1", 1);
+  APRS_setPath2("WIDE2", 2);
+  APRS_setPreamble(1000); //empiric, slow ptt on and mic on dra818?
+  APRS_setTail(100);
+  APRS_useAlternateSymbolTable(false);
+  APRS_setSymbol('n');
+  APRS_printSettings();
+  Serial.print(F("Free RAM:     ")); Serial.println(freeMemory());
+
+  // Set radio to sleep mode
+  pinMode(RADIO_ON_PIN, OUTPUT);
+  digitalWrite(RADIO_ON_PIN, HIGH);
+  
+  // Initialise sensors
+  pinMode(BATT_V_PIN, INPUT);
+  // initialize temp probe
+  sensors.begin();
+  // set the resolution to 10 bit (good enough?)
+  sensors.setResolution(firstThermometer, 10);
+
+#if SHOULD_PROGRAM_RADIO
+  //hook up radio to TX0 with a voltage divider 10k and 20k.
+  Serial.print("AT+DMOCONNECT\r\n");
+  delay(1000);
+  Serial.print("AT+DMOSETGROUP=0,144.8000,144.8000,0000,8,0000\r\n");
+#endif
+
+  Serial.println(F("Setup complete!"));
+  
+}
 
 void aprs_msg_callback(struct AX25Msg *msg) {
 }
@@ -92,34 +133,6 @@ long EEPROMReadlong(long address) {
   
   //Return the recomposed long by using bitshift.
   return ((four << 0) & 0xFF) + ((three << 8) & 0xFFFF) + ((two << 16) & 0xFFFFFF) +((one << 24) & 0xFFFFFFFF);
-}
-
-void setup() {
-  delay(200);
-  // Set up serial port
-  Serial.begin(9600);
-  
-  // Initialise LibAPRS
-  APRS_init(ADC_REFERENCE, OPEN_SQUELCH);
-  APRS_setCallsign("SA0MIK", 5);
-  APRS_setPath1("WIDE1", 1);
-  APRS_setPath2("WIDE2", 2);
-  APRS_setPreamble(1000); //empiric, slow ptt on and mic on dra818?
-  APRS_setTail(100);
-  APRS_useAlternateSymbolTable(false);
-  APRS_setSymbol('n');
-  APRS_printSettings();
-  Serial.print(F("Free RAM:     ")); Serial.println(freeMemory());
-
-  // Initialise sensors
-  pinMode(BATT_V_PIN, INPUT);
-  // initialize temp probe
-  sensors.begin();
-  // set the resolution to 10 bit (good enough?)
-  sensors.setResolution(firstThermometer, 10);
-  
-  Serial.println(F("Setup complete!"));
-  
 }
 
 void messageExample() {
@@ -299,6 +312,16 @@ static void smartDelay(unsigned long ms)
   } while (millis() - start < ms);
 }
 
+void send_beacon() {
+  digitalWrite(RADIO_ON_PIN, LOW); // turn on radio
+  delay(3000); // wait for radio to start
+  updatePosition();
+  updateComment();
+  sendLocationUpdate();    
+  delay(500); // wait for radio to stop        
+  digitalWrite(RADIO_ON_PIN, HIGH); // turn off radio
+}
+
 void loop() {
   
   while (Serial.available())
@@ -322,20 +345,18 @@ void loop() {
       if (seconds_since_beacon==0) {
         smartDelay(1000); //make sure that an update not happens to fast after startup after observed bug 
       }
-      bool send_beacon = false;
+      bool should_send_beacon = false;
       if (beacons_sent <= BEACON_REPEATS) {
-        send_beacon = true;
+        should_send_beacon = true;
       } else {
         //if 5 updates have been sent, only send new if new position
         if (gps.location.isUpdated()) {
           beacons_sent = 0;
-          send_beacon = true;
+          should_send_beacon = true;
         }
       }
-      if (send_beacon) {
-        updatePosition();
-        updateComment();
-        sendLocationUpdate();    
+      if (should_send_beacon) {
+        send_beacon();  
         seconds_since_beacon = 0;
         beacons_sent += 1;
       } 
@@ -346,12 +367,10 @@ void loop() {
   
   seconds_since_beacon += 1;
   smartDelay(1000);
-
+     
 #if DEBUG
-  updatePosition();
-  updateComment();
-  sendLocationUpdate();    
-  delay(5000);          
+  send_beacon();
+  delay(7000); // extra delay to not send all the time
 #endif
   
 }
