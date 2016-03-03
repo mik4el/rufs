@@ -18,7 +18,7 @@
 #define BEACON_REPEATS 5
 
 //Debug mode
-#define DEBUG true
+#define DEBUG false
 #define SHOULD_PROGRAM_RADIO false
 
 TinyGPSPlus gps;
@@ -314,11 +314,11 @@ static void smartDelay(unsigned long ms)
 
 void send_beacon() {
   digitalWrite(RADIO_ON_PIN, LOW); // turn on radio
-  delay(3000); // wait for radio to start
+  smartDelay(3000); // wait for radio to start
   updatePosition();
   updateComment();
   sendLocationUpdate();    
-  delay(500); // wait for radio to stop        
+  smartDelay(500); // wait for radio to stop        
   digitalWrite(RADIO_ON_PIN, HIGH); // turn off radio
 }
 
@@ -370,7 +370,7 @@ void loop() {
      
 #if DEBUG
   send_beacon();
-  delay(7000); // extra delay to not send all the time
+  smartDelay(7000); // extra delay to not send all the time
 #endif
   
 }
