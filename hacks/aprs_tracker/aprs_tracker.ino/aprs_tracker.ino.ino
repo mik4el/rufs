@@ -6,18 +6,18 @@
 #include <DallasTemperature.h>
 #include <EEPROM.h>
 
-//LibAPRS
+// LibAPRS
 #define ADC_REFERENCE REF_5V
 #define OPEN_SQUELCH false
 
-//Other
+// Other
 #define ONE_WIRE_BUS 8 // Temperature data wire is plugged into pin D8
 #define BATT_V_PIN 2 // Batt pin wire is plugged into A2
 #define RADIO_ON_PIN A1 // Radio on pin is plugged into A1
 #define BEACON_PERIOD_SECONDS 60
 #define BEACON_REPEATS 5
 
-//Debug mode
+// Debug mode
 #define DEBUG false
 #define SHOULD_PROGRAM_RADIO false
 
