@@ -1,4 +1,4 @@
-update=Måndag 07 Mars 2016 10:30:33
+update=Måndag 07 Mars 2016 11:28:37
 version=1
 last_client=eeschema
 [pcbnew]
@@ -27,7 +27,7 @@ NetIExt=net
 version=1
 [eeschema]
 version=1
-LibDir=/Users/mikaelandersson/git/rufs/hacks/aprs_tracker/Arduino_nano;/Users/mikaelandersson/git/rufs/hacks/aprs_tracker/Audio_jack
+LibDir=sma_connectors/library;dra818v_library;../v2
 [eeschema/libraries]
 LibName1=power
 LibName2=device
@@ -58,3 +58,6 @@ LibName26=opto
 LibName27=atmel
 LibName28=contrib
 LibName29=valves
+LibName30=sma_connectors/library/sma
+LibName31=dra818v_library/dra818v
+LibName32=ArduProMiniTKB

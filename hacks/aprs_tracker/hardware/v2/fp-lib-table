@@ -1,0 +1,6 @@
+(fp_lib_table
+  (lib (name dra818v)(type KiCad)(uri "$(KIPRJMOD)/dra818v.pretty")(options "")(descr ""))
+  (lib (name sma_female_top)(type KiCad)(uri "$(KIPRJMOD)/sma_female_top.pretty")(options "")(descr ""))
+  (lib (name "arduino pro mini")(type Legacy)(uri "$(KIPRJMOD)/arduino pro mini.mod")(options "")(descr ""))
+  (lib (name ublox_gps)(type KiCad)(uri "$(KIPRJMOD)/ublox_gps.pretty")(options "")(descr ""))
+)
