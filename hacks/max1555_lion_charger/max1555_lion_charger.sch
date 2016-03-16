@@ -1,4 +1,5 @@
 EESchema Schematic File Version 2
+LIBS:max1555_lion_charger-rescue
 LIBS:power
 LIBS:device
 LIBS:transistors
@@ -29,6 +30,7 @@ LIBS:atmel
 LIBS:contrib
 LIBS:valves
 LIBS:max1555_library
+LIBS:max1555_lion_charger-cache
 EELAYER 25 0
 EELAYER END
 $Descr A4 11693 8268
@@ -44,7 +46,7 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L MAX1555 U1
+L MAX1555-RESCUE-max1555_lion_charger U1
 U 1 1 5698BAD3
 P 5200 3600
 F 0 "U1" H 5200 3200 60  0000 C CNN
