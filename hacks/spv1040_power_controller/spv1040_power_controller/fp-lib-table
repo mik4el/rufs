@@ -1,3 +1,5 @@
 (fp_lib_table
   (lib (name SOD-128)(type KiCad)(uri "$(KIPRJMOD)/SOD-128")(options "")(descr ""))
+  (lib (name xal6060)(type KiCad)(uri "$(KIPRJMOD)/xal6060.pretty")(options "")(descr ""))
+  (lib (name STmite_flat_DO216-AA)(type KiCad)(uri "$(KIPRJMOD)/STmite_flat_DO216-AA.pretty")(options "")(descr ""))
 )
