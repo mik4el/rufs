@@ -1,0 +1,3 @@
+(fp_lib_table
+  (lib (name SOD-128)(type KiCad)(uri "$(KIPRJMOD)/SOD-128")(options "")(descr ""))
+)
