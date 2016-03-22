@@ -273,7 +273,7 @@ F 1 "TVS" H 4300 4100 50  0000 C CNN
 F 2 "STmite_flat_DO216-AA:STmite_flat_DO216-AA" H 4300 4250 50  0001 C CNN
 F 3 "" H 4300 4250 50  0000 C CNN
 	1    4300 4250
-	0    1    1    0   
+	0    -1   -1   0   
 $EndComp
 $Comp
 L C C6
