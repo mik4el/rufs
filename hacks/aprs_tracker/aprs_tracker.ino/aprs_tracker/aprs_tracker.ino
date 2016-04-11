@@ -14,17 +14,25 @@
 #define ONE_WIRE_BUS 8 // Temperature data wire is plugged into pin D8
 #define BATT_V_PIN 2 // Batt pin wire is plugged into A2
 #define RADIO_ON_PIN A1 // Radio on pin is plugged into A1
+#define STATUS_LED_PIN A3 // STATUS_LED_PIN is plugged into A3
 #define BEACON_PERIOD_SECONDS 60
 #define BEACON_REPEATS 5
 
 // Debug mode
 #define DEBUG false
+#define SHOULD_PRINT_SERIAL false
 #define SHOULD_PROGRAM_RADIO false
+
+#if SHOULD_PRINT_SERIAL
+#define Sprintln(a) (Serial.println(a))
+#else
+#define Sprintln(a) 
+#endif
 
 TinyGPSPlus gps;
 OneWire oneWire(ONE_WIRE_BUS); // Setup a oneWire instance to communicate with any OneWire devices
 DallasTemperature sensors(&oneWire); // Pass our oneWire reference to Dallas Temperature. 
-DeviceAddress firstThermometer = { 0x28, 0xFF, 0xD5, 0xC1, 0x64, 0x15, 0x02, 0xE6 }; // Assign the addresses of your 1-Wire temp sensors.
+DeviceAddress firstThermometer = { 0x28, 0xFF, 0x7E, 0xDC, 0x64, 0x15, 0x02, 0x00 }; // Assign the addresses of your 1-Wire temp sensors.
 String commentString = "";
 float temp1C = -127.00; //-127.00 is the error temp
 long internalV = 0;
@@ -47,12 +55,10 @@ void setup() {
   APRS_setTail(100);
   APRS_useAlternateSymbolTable(false);
   APRS_setSymbol('n');
-  APRS_printSettings();
-  Serial.print(F("Free RAM:     ")); Serial.println(freeMemory());
 
   // Set radio to sleep mode
   pinMode(RADIO_ON_PIN, OUTPUT);
-  digitalWrite(RADIO_ON_PIN, HIGH);
+  digitalWrite(RADIO_ON_PIN, HIGH); // radio off
   
   // Initialise sensors
   pinMode(BATT_V_PIN, INPUT);
@@ -60,15 +66,20 @@ void setup() {
   sensors.begin();
   // set the resolution to 10 bit (good enough?)
   sensors.setResolution(firstThermometer, 10);
+  pinMode(STATUS_LED_PIN, OUTPUT);
+  digitalWrite(STATUS_LED_PIN, HIGH);
 
 #if SHOULD_PROGRAM_RADIO
-  //hook up radio to TX0 with a voltage divider 10k and 20k.
+  digitalWrite(RADIO_ON_PIN, LOW); // radio on
+  delay(2000);
   Serial.print("AT+DMOCONNECT\r\n");
-  delay(1000);
+  delay(2000);
   Serial.print("AT+DMOSETGROUP=0,144.8000,144.8000,0000,8,0000\r\n");
+  delay(5000);
+  digitalWrite(RADIO_ON_PIN, HIGH); // radio off
 #endif
 
-  Serial.println(F("Setup complete!"));
+  Sprintln(F("Setup complete!"));
   
 }
 
@@ -135,42 +146,6 @@ long EEPROMReadlong(long address) {
   return ((four << 0) & 0xFF) + ((three << 8) & 0xFFFF) + ((two << 16) & 0xFFFFFF) +((one << 24) & 0xFFFFFFFF);
 }
 
-void messageExample() {
-  // We first need to set the message recipient
-  APRS_setMessageDestination("SA0MIK", 7);
-  
-  // And define a string to send
-  char *message = "Hi Mikael!";
-  APRS_sendMsg(message, strlen(message));
-  
-}
-
-void locationUpdateExample() {
-  // Let's first set our latitude and longtitude.
-  // These should be in NMEA format!
-  APRS_setLat("5530.80N");
-  APRS_setLon("01143.89E");
-  
-  // We can optionally set power/height/gain/directivity
-  // information. These functions accept ranges
-  // from 0 to 10, directivity 0 to 9.
-  // See this site for a calculator:
-  // http://www.aprsfl.net/phgr.php
-  // LibAPRS will only add PHG info if all four variables
-  // are defined!
-  APRS_setPower(2);
-  APRS_setHeight(4);
-  APRS_setGain(7);
-  APRS_setDirectivity(0);
-  
-  // We'll define a comment string
-  char *comment = "LibAPRS location update";
-    
-  // And send the update
-  APRS_sendLoc(comment, strlen(comment));
-  
-}
-
 // Here's a function to process incoming packets
 // Remember to call this function often, so you
 // won't miss any packets due to one already
@@ -235,14 +210,8 @@ void updatePosition() {
   lonStr.toCharArray(lonChar, lonStr_len);
   
 #if DEBUG
-  Serial.print("'");
-  Serial.print(latChar);
-  Serial.print("'");
-  Serial.println();
-  Serial.print("'");
-  Serial.print(lonChar);
-  Serial.print("'");
-  Serial.println();
+  Sprintln(latChar);
+  Sprintln(lonChar);
   APRS_setLat("5530.80N");
   APRS_setLon("01143.89E");
 #else
@@ -252,13 +221,16 @@ void updatePosition() {
 }
 
 void updateComment() {
-#if DEBUG
-  commentString = "I:1 T:22.50 Vi:4.3 Vb:4.2";
-#else
   sensors.requestTemperatures();
   temp1C = sensors.getTempC(firstThermometer);
   internalV = read_internal_v();
   battV = read_batt_v();
+#if DEBUG
+  commentString = "I:1 T:22.50 Vi:4.3 Vb:4.2";
+  Sprintln(temp1C);
+  Sprintln(internalV);
+  Sprintln(battV);
+#else
   long messageIdAddress=0;
   messageId = EEPROMReadlong(messageIdAddress) + 1;
   // Make message, e.g. "I:1 T:22.50 Vi:4.3 Vb:4.2"
@@ -266,7 +238,7 @@ void updateComment() {
   commentString += String(messageId, DEC);
   commentString += F(" T1:");
   if (temp1C == -127.00) {
-    Serial.println(F("Error getting temperature"));
+    Sprintln(F("Error getting temperature"));
     commentString += "E";
   } else {
     commentString += String(temp1C, 2);
@@ -285,30 +257,21 @@ void sendLocationUpdate() {
   char commentStringChar[str_len];
   commentString.toCharArray(commentStringChar, str_len);
   APRS_sendLoc(commentStringChar, strlen(commentStringChar));
-  Serial.println();
-  Serial.print(F("Location update sent with comment '"));
-  Serial.print(commentStringChar);
-  Serial.print(F("'"));
-  Serial.println();
-#if DEBUG
-  print_status();
-#endif
-}
-
-void print_status() {
-  APRS_printSettings();
-  Serial.print(F("Free RAM:     ")); Serial.println(freeMemory());
+  Sprintln(F("Location update sent with comment "));
+  Sprintln(commentStringChar);
 }
 
 // This custom version of delay() ensures that the gps object
-// is being "fed".
+// is being "fed" and that blinks to status leds can happen.
 static void smartDelay(unsigned long ms)
 {
   unsigned long start = millis();
   do 
-  {
-    while (Serial.available())
+  {    
+    // read gps serial
+    while (Serial.available()) {
       gps.encode(Serial.read());
+    }
   } while (millis() - start < ms);
 }
 
@@ -322,6 +285,15 @@ void send_beacon() {
   digitalWrite(RADIO_ON_PIN, HIGH); // turn off radio
 }
 
+void flash_status_led(int times_to_flash) {
+  for (int i=0; i<times_to_flash; i++) {
+    digitalWrite(STATUS_LED_PIN, HIGH);
+    smartDelay(100);
+    digitalWrite(STATUS_LED_PIN, LOW);
+    smartDelay(100);
+  }
+}
+
 void loop() {
   
   while (Serial.available())
@@ -329,18 +301,18 @@ void loop() {
 
 #if !DEBUG
   if (millis() > 5000 && gps.charsProcessed() < 10) {
-    Serial.println(F("No GPS detected: check wiring."));
-    while(true);
+    Sprintln(F("No GPS detected: check wiring."));
+    while(true) {
+      flash_status_led(5);
+    };
   } else {
-    Serial.println(gps.passedChecksum());
+    Sprintln(gps.passedChecksum());
   }
 #endif
 
   if (gps.location.isValid()) {
-    Serial.print(gps.location.lat(), 2);
-    Serial.print(F(","));
-    Serial.print(gps.location.lng(), 2);
-    Serial.println();
+    Sprintln(gps.location.lat());
+    Sprintln(gps.location.lng());
     if (seconds_since_beacon>BEACON_PERIOD_SECONDS || seconds_since_beacon==0) {
       if (seconds_since_beacon==0) {
         smartDelay(1000); //make sure that an update not happens to fast after startup after observed bug 
@@ -362,7 +334,7 @@ void loop() {
       } 
     }
   } else {
-    Serial.println(F("."));
+    Sprintln(F("."));
   }
   
   seconds_since_beacon += 1;
@@ -372,5 +344,12 @@ void loop() {
   send_beacon();
   smartDelay(7000); // extra delay to not send all the time
 #endif
-  
+
+  //flash status led
+  if (gps.location.isValid()) {
+    flash_status_led(3);
+  } else {
+    flash_status_led(1);
+  }
+   
 }
