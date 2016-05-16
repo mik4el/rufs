@@ -38,12 +38,14 @@ void loop() {
       messageString = messageString + (char)buf[i];
     }
     Serial.println(messageString);
+    
     /* Debug
     Serial.print("Buffer: \"");
     Serial.print((char*)buf);
     Serial.print("\"\r\n");
     Serial.println("Message: \"" + messageString + "\"");
     */
+    
     digitalWrite(LED_PIN_RX, HIGH); 
     delay(200);
     digitalWrite(LED_PIN_RX, LOW);        

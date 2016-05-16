@@ -8,7 +8,7 @@ except:
 	try:
 		ser = serial.Serial('/dev/cu.wchusbserialfd130', 9600, timeout=1)  # osx address 2
 	except:
-		ser = serial.Serial('/dev/cu.wchusbserialfa140', 9600, timeout=1)  # osx address 1 
+		ser = serial.Serial('/dev/cu.wchusbserial1410', 9600, timeout=1)  # osx address 1 
 
 try:
 	while 1:
