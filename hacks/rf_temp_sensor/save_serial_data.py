@@ -20,4 +20,4 @@ try:
 			print >> f, ("%s %s"%(now.strftime("%Y-%m-%d %H:%M:%S"),line))
 			f.close()
 except KeyboardInterrupt:
-	print "\ndone"
+	print("\ndone")
