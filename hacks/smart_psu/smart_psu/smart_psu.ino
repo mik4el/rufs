@@ -5,9 +5,10 @@
 #define RED_PIN 4
 #define POWER_SWITCH_PIN 0
 #define MAX1555_CHG_PIN 2
-#define SECONDS_TO_SLEEP 8 // Multiple of 8
-#define SECONDS_ON 5L // For rf_temp_sensor, seconds on is 3, tracker version, seconds on is 5*60 to make sure GPS lock happens
-
+#define SECONDS_TO_SLEEP 600 // Divisible by 8, 10 minutes = 60*10 for gadget-im-still-here.
+#define SECONDS_ON 20L // For rf_temp_sensor: 3L
+                      // For tracker: 5L*60L to make sure GPS lock happens, for 
+                      // For gadget-im-still-here: 20L
 // NB: Remember to compile with these options:
 // attiny85, 1 mhz internal clock and use programmer USBtinyISP.
 
